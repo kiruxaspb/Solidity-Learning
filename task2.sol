@@ -5,7 +5,7 @@
 Рассмотреть все варианты создания массивов (одномерные, двумерные и т.д.) и их функциональное применение.
 */
 
-// https://ropsten.etherscan.io/address/0x04ADAcbCb51D063786e1544761963F35fC41Ec01#code
+// https://ropsten.etherscan.io/address/0xa989Ca30218E3578Abcc04f284bb24Bf8446B32A#code
 
 pragma solidity ^0.8.11;
 
@@ -18,13 +18,23 @@ contract Array {
 
     uint[] public dynamicArray; // создаем открытый динамический массив
     uint[] public dynamicArray2 = [3,2,1,2,3,4]; // можем инициализировать динамический массив сразу, тогда не потребуется его вводить
+    uint[] public dynamicArray3;
     uint[5] public fixArray; // создаем открытый статический массив
     uint[5] public fixArray2 = [5,5,5,5,5]; // можем инициализировать динамический массив сразу, тогда не потребуется его вводить
     uint[][] public tddArray; // создаем открытый двумерный динамический массив
     uint[5][5] public tdfArray; // создаем открытый двумерный статический массив
     string[2][] public mixed; // набор динамических массивов, состоящих из N элементом, в данном случае 2
+    string[][3] public mixed2; // набор трех динамических массивов
+    string[2][] public mixed22;
     
     // setters
+    
+    constructor() { // любой массив также можно заполнить с помощью конструктора
+        dynamicArray3 = [1,2,3];
+        mixed22.push(["Info", "Info2"]);
+        mixed22.push(["Inf4", "Info3"]);
+    }
+    
     function setDynamicArray(uint[] memory _dynamicArray) public { // считываем введенный массив и записываем его во временную переменную
         dynamicArray = _dynamicArray; // присваиваем динамическому массиву введенный массив
     }
@@ -44,6 +54,11 @@ contract Array {
     function changeInArray(uint _index, uint value) public { // считываем индекс и значение на которое нужно поменять
         require(_index < dynamicArray.length, "index out of length array"); // если введен индекс которого нет
         dynamicArray[_index] = value; // присваиваем новое значение указаному по индексу элементу
+    }
+
+    function addName(uint _index) public {
+        require(_index > mixed2.length, "Wrong"); // проверяем правильность индекса
+        mixed2[_index] = ["Kirill", "Anton", "Vasya", "Lola"]; // записываем в массив
     }
     
     // в статическом массиве мы можем только обнулить элемент -> привести к значению/ям по умолчанию
@@ -70,14 +85,14 @@ contract Array {
     function removeTwoDecArray(uint _i, uint _j) public {
         delete tddArray[_i][_j];
     }
-    
-    function Push() public { // заполнение смешанного массива строками
-        mixed.push(["Ivan", "Judy"]);
-    }
 
     // удаление массива
     function deleteAll() public {
         delete dynamicArray; // удаляем любой массив
+    }
+
+    function PushName() public { // заполнение смешанного массива строками
+        mixed.push(["Ivan", "Judy"]);
     }
 
     // getters
