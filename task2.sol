@@ -22,6 +22,7 @@ contract Array {
     uint[5] public fixArray2 = [5,5,5,5,5]; // можем инициализировать динамический массив сразу, тогда не потребуется его вводить
     uint[][] public tddArray; // создаем открытый двумерный динамический массив
     uint[5][5] public tdfArray; // создаем открытый двумерный статический массив
+    string[2][] public mixed; // набор динамических массивов, состоящих из N элементом, в данном случае 2
     
     // setters
     function setDynamicArray(uint[] memory _dynamicArray) public { // считываем введенный массив и записываем его во временную переменную
@@ -68,6 +69,10 @@ contract Array {
     // удаление элемента из двумерного динамического массива -> обнуляем
     function removeTwoDecArray(uint _i, uint _j) public {
         delete tddArray[_i][_j];
+    }
+    
+    function invalidPush() public { // заполнение смешанного массива строками
+        mixed.push(["Ivan", "Judy"]);
     }
 
     // удаление массива
