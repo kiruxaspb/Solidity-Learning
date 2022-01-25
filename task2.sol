@@ -71,7 +71,7 @@ contract Array {
         delete tddArray[_i][_j];
     }
     
-    function invalidPush() public { // заполнение смешанного массива строками
+    function Push() public { // заполнение смешанного массива строками
         mixed.push(["Ivan", "Judy"]);
     }
 
