@@ -5,7 +5,7 @@
 Рассмотреть все варианты создания массивов (одномерные, двумерные и т.д.) и их функциональное применение.
 */
 
-// https://ropsten.etherscan.io/address/0xa989Ca30218E3578Abcc04f284bb24Bf8446B32A#code
+// https://ropsten.etherscan.io/address/0xbdd3b1649d091b05a9586ab6f3b4e4da8cec5657#code
 
 pragma solidity ^0.8.11;
 
@@ -129,5 +129,16 @@ contract Array {
             }
         }
         return _high; // возращаем полученное число
+    }
+    
+    // транспонирование матрицы
+    function transpon(uint[][] memory arr) public view returns (uint[][] memory) { // считываем введенную матрицу  и вохращаем тоже матрицу
+        uint[][] memory current = arr; // создаем локальный массив
+        for (uint i = 0; i < arr.length; i++) {
+            for (uint j = 0; j < arr.length; j++) {
+                current[j][i] = current[i][j]; // проходя по массиву меняем индекс
+            }
+        }
+        return current;
     }
 }
