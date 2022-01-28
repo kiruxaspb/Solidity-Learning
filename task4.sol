@@ -14,6 +14,8 @@
 // ContractTwo: https://ropsten.etherscan.io/address/0x376F0debdffC7F64ed9AD14A58EC7BD5af624A4f#code
 
 // Работа с интерфейсами:
+// Counter: https://ropsten.etherscan.io/address/0x443898c58640C34Cf7C58bAE59383C3A9257BdE7#code
+// TestInterface: https://ropsten.etherscan.io/address/0x5D3f34C8bE7b4aed9CCDC150c3de9d55883f1d60#code
 
 
 pragma solidity ^0.8.11;
@@ -61,7 +63,7 @@ contract ContractOne {
 }
 
 contract ContractTwo {
-    // функция запроса доступа для контакта, вводим адрес ContractOne для получения доступа к функциям
+    // функция запроса доступа для контакта, вводим адрес ContractOne и ContractTwo для получения доступа к функциям
     function callAccess(address _contractOneAddress, address _addressThisContract) public {
         ContractOne contract1 = ContractOne(_contractOneAddress); // создамем интерфейс использования функции из ContractOne
         contract1.addAccess(_addressThisContract); // вводим адрес ContractTwo для получения доступа
@@ -73,3 +75,44 @@ contract ContractTwo {
         return (contract1.callFunction(_addThisContract, _x, _y)); // вызываем функцию
     }
 }
+
+
+// интерфейс - это абстрактный контакт, который имеет в себе некоторые функциональные ограничения
+// не могут быть реализованы какие либо функции
+// все существующие функции должны быть extrenal
+// может иметь наследование от других интерфейсов
+// контракты могут наследовать интерфейсы
+// не может иметь в себе конструктор
+// не может хранить переменные
+// не может иметь модификаторы
+
+pragma solidity ^0.8.11;
+
+contract Counter {
+    uint public count;
+
+    function add() external { // внешняя функция, чтобы можно было вызвать из другого контракта
+        count += 1;
+    }
+}
+
+// с помощью интефейса мы можем обратиться к функциям контракта не зная код контракта
+// выполнение функций будет происходить на стороне контракта, а с помощью интерейса
+// можно вызвать эти функции или получить значения из контракта
+interface MyCounter {
+    function count() external view returns (uint); // получаем значение счетчика
+
+    function add() external; // вызываем функцию счетчика
+}
+
+// получаем функции контакта Counter с помощью интерфейса MyCounter
+contract TestInterface {
+    function useCountAdd(address _counterAddress) public { // вводим адрес контракта
+        MyCounter(_counterAddress).add(); // с помощью интерфейса вызываем функцию прибавления
+    }
+
+    function getValueCount(address _counterAddress) public view returns (uint) {
+        return MyCounter(_counterAddress).count(); // с помощью интерфейса получаем значение из контракта
+    }
+}
+
