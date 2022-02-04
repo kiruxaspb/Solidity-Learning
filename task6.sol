@@ -6,14 +6,16 @@
 Добавить в контракт из задачи 5 функционал такой, чтобы одно из полей было типа enum.
 */
 
+// https://ropsten.etherscan.io/address/0x2943311437e2bb8B50c6f85f2235fFfD2D48cD8A#code
+
 pragma solidity ^0.8.11;
 
-contract Test {
+contract SafetyDeposit {
     address payable public owner;
 
-    event DepositInfo(address indexed _from, address indexed _to, uint256 _amount); // информация о пополнениях
-    event WithdrawInfo(address indexed _from, address indexed _to, uint256 _amount); // информация о выводе
-    event BlockInfo(address target, uint value, uint time, string reason); // информация о блокировке счет
+    event DepositInfo(address indexed from, uint256 indexed depositTime, uint256 amount); // информация о пополнениях
+    event WithdrawInfo(address indexed to, uint256 indexed withdrawTime, uint256 amount); // информация о выводе
+    event BlockInfo(address blockTarget, uint blockingAmount, uint indexed blockTime, string blockReason); // информация о блокировке счет
 
     enum Status {Empty, Active, Blocked}
     /*
@@ -26,10 +28,15 @@ contract Test {
         address holder;
         uint balance;
         bool valid;
-        Status status;
+        Status status; // статус депозита
     }
 
-    Holder[] public holdersList;
+    mapping(address => Holder) public holders; // массив стуктур
+    /*
+    отказался от использования "Holder[] public holdersList" в пользу маппинга
+    тк столкнулся с функциональными проблемами, использовалась лишняя функция для поиска индекса в массиве по адресу
+    не мог добавить значение нового пополнения в уже существующий элемент массива при пополнении
+    */
 
     receive() external payable {}
     fallback() external {}
@@ -44,21 +51,23 @@ contract Test {
     }
 
     modifier onlyHolder(address _holder) {
-        uint id = searchHolder(_holder);
-        require(holdersList[id].holder == msg.sender, "You are not deposit owner");
+        require(holders[msg.sender].valid == true, "You are not deposit owner");
         _;
     }
 
     modifier checkBalance(address _holder, uint _amount) {
-        uint id = searchHolder(_holder);
-        require(holdersList[id].balance >= _amount, "Incorrect amount");
+        require(holders[_holder].balance >= _amount, "Overflow value of withdrawals");
+        _;
+    }
+    // проверка
+    modifier checkOption(uint8 test) {
+        require(test == 0 || test == 1, "Use 0 or 1");
         _;
     }
 
     // в случае блокировки не позволит вывести с депозита
     modifier blockCheck(address _target) {
-        uint id = searchHolder(_target);
-        if (holdersList[id].status == Status.Blocked) {
+        if (holders[_target].status == Status.Blocked) {
             revert("Deposit is blocked");
         }
         _;
@@ -66,112 +75,86 @@ contract Test {
 
     // функция пополнения
     function deposit() public payable {
-        payable(address(this)).send(msg.value);
-        holdersList.push(Holder(msg.sender, msg.value, true, Status.Active));
-        emit DepositInfo(msg.sender, address(this), msg.value);
-    }
-
-    function newDeposit() external payable {
-        payable(address(this)).send(msg.value);
-        emit DepositInfo(msg.sender, address(this), msg.value);
+        // вносим информацию  внесении средств в структуру массива
+        holders[msg.sender].holder = msg.sender;
+        holders[msg.sender].balance += msg.value;
+        holders[msg.sender].valid = true;
+        holders[msg.sender].status = Status.Active;
+        emit DepositInfo(msg.sender, block.timestamp, msg.value); // сохраняем данные о внесении средств
     }
 
     // функция вывода для владельца
-    function withdraw(uint amount) external onlyOnwer {
-        if (address(this).balance > amount) {
-            revert("Incorrect amount");
+    function withdrawOptional(uint8 option, uint amount) public onlyOnwer checkOption(option) {
+        if (option == 0) { // если введем опцию 0 - выведем указанную сумму
+            if (address(this).balance < amount) {
+                revert("Overflow value of withdrawals"); // отметит функцию, если введем значение большее бананса контракта
+            }
+            owner.transfer(amount);
         }
-        payable(msg.sender).transfer(amount);
-        // payable(msg.sender).transfer(address(this).balance); выведем весь ETH с контракта
+        if (option == 1) { // если введем 1 выведем все
+           owner.transfer(address(this).balance); // выведем весь ETH с контракта
+        }
+    }
+
+    function withdrawALL() public onlyOnwer {
+        payable(msg.sender).transfer(address(this).balance); // выведем весь ETH с контракта
     }
 
     // функция вывода
-    function withdrawHolder(address payable recipient, uint value) public payable
+    function withdrawHolder(address payable recipient, uint value) public
         onlyHolder(recipient)
         checkBalance(recipient, value)
         blockCheck(recipient)
     {   
         recipient.send(value);
 
-        uint id = searchHolder(recipient);
-        holdersList[id].balance -= value; // изменяем значение баланса
-        if (holdersList[id].balance == 0) {
-            holdersList[id].status = Status.Empty; // если баланс кошелька 0, обозначаем его как пустой
+        holders[recipient].balance -= value; // изменяем значение баланса
+        if (holders[recipient].balance == 0) {
+            holders[recipient].status = Status.Empty; // если баланс кошелька 0, обозначаем его как пустой
         }
-        emit WithdrawInfo(address(this), recipient, value);
+        emit WithdrawInfo(recipient, block.timestamp, value);
     }
-
+    
+    // получаем значение баланса контракта
     function getBalance() public view onlyOnwer returns (uint) {
         return address(this).balance;
     }
 
-    // функция поиска индекса депозита по введенному адресу
-    function searchHolder(address current) public view returns (uint id) {
-        for (uint i = 0; i < holdersList.length; i++) {
-            if (holdersList[i].holder == current) {
-                id = i;
-            }
-            else {
-                revert("Deposit of the desired holder was not found");
-            }
-        }
-        return id;
+    // если депозит существует, то вызывающий получит информацию только о своем в владе
+    function getDepositInfo() public view onlyHolder(msg.sender) returns (
+        uint balance,
+        bool validation,
+        Status _status
+    )
+    {
+        balance = holders[msg.sender].balance;
+        validation = holders[msg.sender].valid;
+        _status = holders[msg.sender].status;
     }
 
-    // функция для вывода всех полей структуры в массиве на основе введенного адреса
-    function getDepositInfo(address current) public view onlyOnwer onlyHolder(current) returns (
+    // функция получения информации о депозите для владельца контракта
+    function getDepositInfo(address target) public view onlyOnwer returns (
         address holder,
         uint balance,
         bool validation,
         Status _status
     )
     {
-        uint id = searchHolder(current);
-        holder = holdersList[id].holder;
-        balance = holdersList[id].balance;
-        validation = holdersList[id].valid;
-        _status = holdersList[id].status;
+        holder = holders[target].holder;
+        balance = holders[target].balance;
+        validation = holders[target].valid;
+        _status = holders[target].status;
     }
 
-    // функция для вывода всех полей структуры по индексу в массиве
-    function getDepositInfo2(uint id) public view onlyOnwer returns (
-        address holder,
-        uint balance,
-        bool validation,
-        Status _status
-    )
-    {
-        if (id >= holdersList.length) {
-            revert("Incorrect id, use *searchHolder* function");
-        }
-        else {
-            holder = holdersList[id].holder;
-            balance = holdersList[id].balance;
-            validation = holdersList[id].valid;
-            _status = holdersList[id].status;
-        }
-    }
-
-    // изменение владельца депозита
-    function editDeposit(address target, address newDepositOwner) public
-        onlyHolder(target)
-        blockCheck(target)
-    {
-        uint id = searchHolder(target);
-        holdersList[id].holder = newDepositOwner;
-    }
-
+    // изменение поля структуры в массиве
     // блокировка депозита
     function blockDeposit(address target, string memory reason) public onlyOnwer {
-        uint id = searchHolder(target);
-        holdersList[id].status = Status.Blocked;
-        uint _value = holdersList[id].balance;
-        emit BlockInfo(target, _value, block.timestamp, reason);
+        holders[target].status = Status.Blocked;
+        emit BlockInfo(target, holders[target].balance, block.timestamp, reason);
     }
 
     // разблокировка депозита
     function unblockDeposit(address target) public onlyOnwer {
-        uint id = searchHolder(target);
-        holdersList[id].status = Status.Active;
+        holders[target].status = Status.Active;
     }
 }
