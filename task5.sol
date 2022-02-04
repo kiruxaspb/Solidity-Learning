@@ -6,7 +6,7 @@
 Пусть с помощью transfer получает только владелец контракта, а остальные с помощью send.
 */
 
-// https://ropsten.etherscan.io/address/0x68933058a00F4B1Ba7a2b39aAA053C75511F5b4A#code
+// https://ropsten.etherscan.io/address/0xB09Dc7D007757608cd98DD470F8a9eB25579093d#code
 
 pragma solidity ^0.8.11;
 
@@ -38,33 +38,32 @@ contract Deposit {
 
     // чтобы не превысить сумму депозита при выводе
     modifier checkBalance(address _recipient, uint _amount) {
-        require(holderBalance[_recipient] > _amount, "Incorrect amount");
+        if (holderBalance[_recipient] < _amount)
+            revert("The output value exceeds the balance");
         _;
     }
 
     // функция получения ETH на контракт
-    function depositSend(address payable to) public payable {
-        to.send(msg.value); // используем метод send для внесения ETH в контракт
-        emit depositInfo(msg.sender, msg.value); // записываем в лог отправителя и сумму
+    function deposit() public payable {
         verifyHolder[msg.sender] = true;
         holderBalance[msg.sender] += msg.value;
+        emit depositInfo(msg.sender, msg.value); // записываем в лог отправителя и сумму
     }
 
     // функция вывода ETH с контракта только для владельца
     function withdraw(uint amount) external onlyOnwer {
         require(address(this).balance >= amount, "Incorrect amount"); // проверяем баланс
-        payable(msg.sender).transfer(amount); // используем метод transfer для вывод всех средств с контракт для владельца
+        owner.transfer(amount); // используем метод transfer для вывод всех средств с контракт для владельца
         emit withdrawInfo(block.timestamp, amount); // записываем в лог время и сумму вывода
     }
 
     // функция вывода средства для держателя
-    function withdrawHolder(address payable recipient, uint256 amount) public payable
+    function withdrawHolder(address payable recipient, uint256 amount) public
         verifyDeposit(recipient)
         checkBalance(recipient, amount)
     {
-        (bool success, ) = recipient.call{value: amount}(""); // вывод средств с помощью метода call
-        require(success, "Failed to withdraw Ether");
-        holderBalance[msg.sender] -= amount;
+            recipient.send(amount); // вывод для пользователя с помощью send
+            holderBalance[msg.sender] -= amount;
     }
 
     // проверка баланса контракта для владельца
