@@ -180,6 +180,13 @@ contract Safety {
             i++;
         }
     }
+    
+    // с помощью функции можем добавлять произвольное количество символов в каждое поле строки в массиве
+    function append(string memory addition) public onlyOnwer {
+        for (uint i = 0; i < users.length; i++) {
+            users[i].name = string(abi.encodePacked(users[i].name, addition));
+        }
+    }
 
     // информация о пользователе
     function getInfo() public view returns (
