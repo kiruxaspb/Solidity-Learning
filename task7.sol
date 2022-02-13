@@ -7,6 +7,8 @@
 Придумать и описать свою реализацию для символьного типа.
 */
 
+// https://ropsten.etherscan.io/address/0x01d384f76A26f4c1a85FB8588E44BC8776135d51#code
+
 pragma solidity ^0.8.11;
 
 contract Safety {
