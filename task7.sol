@@ -176,7 +176,7 @@ contract Safety {
     function burnBonuses() public onlyOnwer {
         uint i;
         while (i != users.length) {
-            if (block.timestamp > users[i].givingTime + 1 weeks) {
+            if (block.timestamp > users[i].givingTime + 1 weeks && users[i].bonuses != 0) {
                 users[i].bonuses -= 100;
             }
             i++;
