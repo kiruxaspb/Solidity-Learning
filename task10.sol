@@ -19,7 +19,7 @@ contract SafetyDeps {
     event DepositInfo(address indexed from, uint256 indexed depositTime, uint256 amount);
     event WithdrawInfo(address indexed to, uint256 indexed withdrawTime, uint256 amount);
 
-    enum Status {Empty, Active, Blocked}
+    enum Status {Empty, Active}
 
     mapping(address => Holder) public holders;
     struct Holder {
@@ -58,13 +58,6 @@ contract SafetyDeps {
 
     modifier checkBalance(address _holder, uint _amount) {
         require(holders[_holder].balance >= _amount, "Overflow value of withdrawals");
-        _;
-    }
-
-    modifier blockCheck(address _target) {
-        if (holders[_target].status == Status.Blocked) {
-            revert("Deposit is blocked");
-        }
         _;
     }
 
@@ -129,10 +122,8 @@ contract SafetyDeps {
 
     function givingBonuses(uint num) public onlyOnwer {
         for (uint i = 0; i < num && i < users.length; i++) {
-            if (users[i].status != Status.Blocked) {
                 users[i].bonuses += 100;
                 users[i].givingTime = block.timestamp;   
-            }
         }
     }
 
