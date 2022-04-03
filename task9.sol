@@ -6,10 +6,8 @@
 
 // https://ropsten.etherscan.io/address/0xAc4595e8f78DE7dE7552D77db1A79dBC71A22e88#code
 
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.13;
 
-// import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol";
-// import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol";
 import "./Address.sol";
 import "./Safemath.sol";
 
