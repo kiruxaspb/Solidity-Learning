@@ -11,169 +11,60 @@
 Попробовать тоже самое сделать для системы Binance Smart Chain
 */
 
+// TRON
+// https://nile.tronscan.org/#/contract/TMtUa3don462G85mCsR1b4T568jDNjqfbn/code
+// лимит при деплое 1000TRX
+// практическим способом нашел цену одной итерации ~ 2 TRX
+// на 500 итерации цикла, он будет остановлен
+
+// BSC
+// https://testnet.bscscan.com/address/0xaCa0b90e27e8BdA7fD952519d21447Fe3CF99bD5
+// использовал немного другой контракт чтобы узнать на каком этапе остановится
+// после 3000 итераций во втором контакте цикл выполняться не будет 
+
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.6;
 
-contract SafetyDeps {
-    address payable public owner;
-
-    event DepositInfo(address indexed from, uint256 indexed depositTime, uint256 amount);
-    event WithdrawInfo(address indexed to, uint256 indexed withdrawTime, uint256 amount);
-
-    enum Status {Empty, Active}
-
-    mapping(address => Holder) public holders;
-    struct Holder {
-        address holder;
-        uint balance;
-        bool valid;
-        Status status;
-    }
+contract TestCicles {
 
     User[] public users;
     struct User {
         string name;
-        uint8 age;
         address wallet;
-        uint16 bonuses;
-        uint givingTime;
-        Status status;
+        uint16 balance;
     }
 
-    receive() external payable {}
-    fallback() external {}
-
-    constructor() {
-        owner = payable(msg.sender);
+    function Registration(string memory _name) public  {
+        users.push(User(_name, msg.sender, 0));
     }
 
-    modifier onlyOnwer {
-        require(msg.sender == owner, "You are not a contract owner");
-        _;
-    }
-
-    modifier onlyHolder(address _holder) {
-        require(holders[msg.sender].valid == true, "You are not deposit owner");
-        _;
-    }
-
-    modifier checkBalance(address _holder, uint _amount) {
-        require(holders[_holder].balance >= _amount, "Overflow value of withdrawals");
-        _;
-    }
-
-    function deposit() public payable {
-        holders[msg.sender].holder = msg.sender;
-        holders[msg.sender].balance += msg.value;
-        holders[msg.sender].valid = true;
-        holders[msg.sender].status = Status.Active;
-        emit DepositInfo(msg.sender, block.timestamp, msg.value);
-    }
-
-    function withdrawALL() public onlyOnwer {
-        payable(msg.sender).transfer(address(this).balance);
-    }
-
-    // функция вывода
-    function withdrawHolder(address payable recipient, uint value) public
-        onlyHolder(recipient)
-        blockCheck(recipient)
-        checkBalance(recipient, value)
-    {   
-        recipient.send(value);
-
-        holders[recipient].balance -= value;
-        if (holders[recipient].balance == 0) {
-            holders[recipient].status = Status.Empty;
+    function add() public {
+        for (uint i = 0; i < users.length; i++) { // при массиве более 500 элементов цикл не доработает до конце
+                users[i].balance += 100;  
         }
-        emit WithdrawInfo(recipient, block.timestamp, value);
-    }
-    
-    function getBalance() public view onlyOnwer returns (uint) {
-        return address(this).balance;
-    }
-
-    function getDepositInfo() public view onlyHolder(msg.sender) returns (
-        uint balance,
-        bool validation,
-        Status _status
-    )
-    {
-        balance = holders[msg.sender].balance;
-        validation = holders[msg.sender].valid;
-        _status = holders[msg.sender].status;
-    }
-
-    function getDepositInfo(address target) public view onlyOnwer returns (
-        address holder,
-        uint balance,
-        bool validation,
-        Status _status
-    )
-    {
-        holder = holders[target].holder;
-        balance = holders[target].balance;
-        validation = holders[target].valid;
-        _status = holders[target].status;
-    }
-
-    function Registration(string memory _name, uint8 age) public onlyHolder(msg.sender) {
-        users.push(User(_name, age, msg.sender, 0, 0, Status.Active));
-    }
-
-    function givingBonuses(uint num) public onlyOnwer {
-        for (uint i = 0; i < num && i < users.length; i++) {
-                users[i].bonuses += 100;
-                users[i].givingTime = block.timestamp;   
-        }
-    }
-
-    function burnBonuses() public onlyOnwer {
-        uint i;
-        while (i != users.length) {
-            if (block.timestamp > users[i].givingTime + 1 weeks && users[i].bonuses != 0) {
-                users[i].bonuses -= 100;
-            }
-            i++;
-        }
-    }
-    
-    function append(string memory addition) public onlyOnwer {
-        for (uint i = 0; i < users.length; i++) {
-            users[i].name = string(abi.encodePacked(users[i].name, addition));
-        }
-    }
-
-    function getInfo() public view returns (
-        address _wallet,
-        string memory userName,
-        uint8 userAge,
-        uint16 userBonuses,
-        uint userBalance
-    )
-    {
-        for (uint i = 0; i < users.length; i++) {
-                userName = users[i].name;
-                userAge = users[i].age;
-                userBonuses = users[i].bonuses;
-                userBalance = holders[msg.sender].balance;
-        }
-        return (msg.sender, userName, userAge, userBonuses, userBalance);
     }
 }
+
+
+/**
+ *Submitted for verification at BscScan.com on 2022-04-10
+*/
+
+pragma solidity ^0.8.13;
 
 contract Test {
     uint public sum;
 
-    function testFor(uint _val1, uint _val2) public {
+    function testFor(uint _val1) public { // воть тут > 3000 итераций не будет работать
         for (uint i = 0; i < _val1; i++) {
-            sum += _val2;
+            sum += 100;
         }
     }
 
-    function testWhile(uint _val1, uint _val2) public {
+    function testWhile(uint _val1) public {
         uint i;
         while (i != _val1) {
-            sum += _val2;
+            sum += 100;
             i++;
         }
     }
