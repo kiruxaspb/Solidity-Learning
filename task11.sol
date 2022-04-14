@@ -5,6 +5,48 @@
 
 pragma solidity ^0.8.13;
 
+contract PatentVerify {
+    function verifyPatent() external returns (bool) {
+        return true;
+    }
+
+}
+
+interface Patenter {
+    function verifyPatent() external;
+}
+
+contract PatentPlatform {
+    address private owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    mapping(address => Patent) public patents;
+    struct Patent {
+        string namePatent;
+        string description;
+        uint patentingTime;
+        bool verify;
+    }
+
+    function PatentRegister(
+        string memory name,
+        string memory desc,
+        bool valid,
+        address addrPatenter
+    ) public {
+        Patenter(addrPatenter).verifyPatent();
+        patents[msg.sender].namePatent = name;
+        patents[msg.sender].description = desc;
+        patents[msg.sender].patentingTime = block.timestamp;
+        patents[msg.sender].verify = valid;
+    }
+}
+
+pragma solidity ^0.8.13;
+
 contract Counter {
     uint public count;
 
