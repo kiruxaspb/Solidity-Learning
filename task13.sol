@@ -23,6 +23,8 @@
 // дешевле всего работать с private, internal функциями и любым visibility для переменных
 // если рассматривать переменные, то дешевле работать с public переменными
 
+// https://ropsten.etherscan.io/address/0x3220479CA73E259bD4C8B9B4a4979324F429afA9#code
+
 pragma solidity ^0.8.13;
 
 contract GasVisibilityTests {
