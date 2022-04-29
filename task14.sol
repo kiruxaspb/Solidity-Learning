@@ -55,6 +55,11 @@ contract Attacker {
         targetBank = InterfaceBank(etherBankAddress);
         owner = msg.sender;
     }
+    
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Atata");
+        _;
+    } 
 
     function attack() external payable onlyOwner {
         targetBank.deposit{value: msg.value}();
@@ -72,9 +77,4 @@ contract Attacker {
     function getBalance() external view returns (uint) {
         return address(this).balance;
     }
-
-    modifier onlyOwner() {
-        require(owner == msg.sender, "Atata");
-        _;
-    } 
 }
