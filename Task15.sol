@@ -35,7 +35,7 @@ contract MyContract2 is MyContract1 {
 
     constructor(string memory _name) {
         name = _name;
-        creator = owner;
+        creator = msg.sender;
     }
 
     function getOwnerName() public view returns (string memory) {
@@ -43,7 +43,7 @@ contract MyContract2 is MyContract1 {
     }
 
     function getOwner2() public view returns (address) {
-        return creator;
+        return owner;
     }
 }
 
@@ -54,7 +54,7 @@ contract MyContract3 is MyContract1, MyContract2 {
     
     constructor() MyContract1() MyContract2("Kirill") {
         testname = name;
-        creator3 = owner;
+        creator3 = creator;
     }
     function getOwner3() public view returns (address) {
         return creator3;
